@@ -1,0 +1,20 @@
+{
+    "name": "eva/database",
+    "description": "For work with database",
+    "keywords": [],
+    "homepage": "https://github.com/thewarmthofyourhands",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "thewarmthofyourhands",
+        }
+    ],
+    "require": {
+        "php": ">=8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Eva\\Database\\": "src/"
+        }
+    }
+}
