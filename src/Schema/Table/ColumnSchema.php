@@ -9,7 +9,7 @@ class ColumnSchema
     public function __construct(
         private readonly string $name,
         private readonly null|string $comment,
-        private readonly string $collate,
+        private readonly null|string $collate,
         private readonly string $type,
         private readonly null|string $default,
         private readonly bool $nullable = true,
@@ -26,7 +26,7 @@ class ColumnSchema
         return $this->comment;
     }
 
-    public function getCollate(): string
+    public function getCollate(): null|string
     {
         return $this->collate;
     }

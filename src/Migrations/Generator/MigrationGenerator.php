@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Eva\Database\Migrations\Generator;
 
-use Eva\Database\ForeignKeySchema;
-use Eva\Database\IndexKeySchema;
-use Eva\Database\PrimaryKeySchema;
-use Eva\Database\Schema;
-use Eva\Database\Schema\DeleteRuleEnum;
-use Eva\Database\Schema\KeySchemaTypeEnum;
-use Eva\Database\Schema\UpdateRuleEnum;
-use Eva\Database\TableSchema;
-use Eva\Database\UniqueKeySchema;
+use Eva\Database\Schema\Schema;
+use Eva\Database\Schema\Table\Enums\KeySchemaTypeEnum;
+use Eva\Database\Schema\Table\Key\Foreign\DeleteRuleEnum;
+use Eva\Database\Schema\Table\Key\Foreign\UpdateRuleEnum;
+use Eva\Database\Schema\Table\Key\ForeignKeySchema;
+use Eva\Database\Schema\Table\Key\IndexKeySchema;
+use Eva\Database\Schema\Table\Key\PrimaryKeySchema;
+use Eva\Database\Schema\Table\Key\UniqueKeySchema;
+use Eva\Database\Schema\TableSchema;
 
 class MigrationGenerator
 {
@@ -61,12 +61,12 @@ class MigrationGenerator
         {
             public function up(): void
             {
-                $up
+        $up
             }
 
             public function down(): void
             {
-                $down
+        $down
             }
         }
 
@@ -87,7 +87,7 @@ class MigrationGenerator
                 if ($compareTableSchemaForUpdate->getName() === $tableSchemaForUpdate->getName()) {
                     if ($tableSchemaForUpdate->getCollation() !== $compareTableSchemaForUpdate->getCollation()) {
                         $updateTableSqlList[] = "ALTER TABLE `{$tableSchemaForUpdate->getName()}` 
-                        COLLATE = {$tableSchemaForUpdate->getCollation()};" . PHP_EOL;
+                        CHARSET {$tableSchemaForUpdate->getCollation()};" . PHP_EOL;
                     }
 
                     if ($tableSchemaForUpdate->getEngine() !== $compareTableSchemaForUpdate->getEngine()) {
@@ -118,14 +118,14 @@ class MigrationGenerator
                             || $columnSchemaForUpdate->getDefault() !== $dbColumnSchema->getDefault()
                             || $columnSchemaForUpdate->getComment() !== $dbColumnSchema->getComment()
                         ) {
-                            $autoincrementSql = false === $columnSchemaForUpdate->isAutoincrement() ? '' : "AUTOINCREMENT";
+                            $autoincrementSql = false === $columnSchemaForUpdate->isAutoincrement() ? '' : "AUTO_INCREMENT";
                             $collateSql = null === $columnSchemaForUpdate->getCollate() ?
                                 '' :
-                                "COLLATE `{$columnSchemaForUpdate->getCollate()}`";
+                                "CHARSET `{$columnSchemaForUpdate->getCollate()}`";
                             $nullableSql = $columnSchemaForUpdate->isNullable() ? 'NULL' : 'NOT NULL';
                             $defaultSql = null === $columnSchemaForUpdate->getDefault() ?
                                 '' :
-                                'DEFAULT ' . $columnSchemaForUpdate->getDefault();
+                                'DEFAULT `' . $columnSchemaForUpdate->getDefault().'`';
                             $commentSql = null === $columnSchemaForUpdate->getComment() ?
                                 '' :
                                 "COMMENT '{$columnSchemaForUpdate->getComment()}'";
@@ -138,14 +138,14 @@ class MigrationGenerator
                     }
 
                     foreach ($columnSchemaForCreateList as $columnSchemaForCreate) {
-                        $autoincrementSql = false === $columnSchemaForCreate->isAutoincrement() ? '' : "AUTOINCREMENT";
+                        $autoincrementSql = false === $columnSchemaForCreate->isAutoincrement() ? '' : "AUTO_INCREMENT";
                         $collateSql = null === $columnSchemaForCreate->getCollate() ?
                             '' :
-                            "COLLATE `{$columnSchemaForCreate->getCollate()}`";
+                            "CHARSET `{$columnSchemaForCreate->getCollate()}`";
                         $nullableSql = $columnSchemaForCreate->isNullable() ? 'NULL' : 'NOT NULL';
                         $defaultSql = null === $columnSchemaForCreate->getDefault() ?
                             '' :
-                            'DEFAULT ' . $columnSchemaForCreate->getDefault();
+                            'DEFAULT `' . $columnSchemaForCreate->getDefault() . '`';
                         $commentSql = null === $columnSchemaForCreate->getComment() ?
                             '' :
                             "COMMENT '{$columnSchemaForCreate->getComment()}'";
@@ -279,16 +279,16 @@ class MigrationGenerator
                                     REFERENCES `{$keySchemaForCreate->getReferenceTableName()}` 
                                     ({$keySchemaForCreate->getReferenceColumnName()})";
                             if (UpdateRuleEnum::CASCADE === $keySchemaForCreate->getUpdateRule()) {
-                                $sql .= 'ON UPDATE CASCADE';
+                                $sql .= ' ON UPDATE CASCADE';
                             }
                             if (UpdateRuleEnum::NULL === $keySchemaForCreate->getUpdateRule()) {
-                                $sql .= 'ON UPDATE SET NULL';
+                                $sql .= ' ON UPDATE SET NULL';
                             }
                             if (DeleteRuleEnum::CASCADE === $keySchemaForCreate->getDeleteRule()) {
-                                $sql .= 'ON DELETE CASCADE';
+                                $sql .= ' ON DELETE CASCADE';
                             }
                             if (DeleteRuleEnum::NULL === $keySchemaForCreate->getDeleteRule()) {
-                                $sql .= 'ON DELETE SET NULL';
+                                $sql .= ' ON DELETE SET NULL';
                             }
                             $sql .= ";";
                             $updateTableSqlList[] = $sql;
@@ -328,7 +328,7 @@ class MigrationGenerator
 
         if (count($tableSchemaListForDrop) > 0) {
             foreach ($tableSchemaListForDrop as $tableSchemaForDrop) {
-                $dropTableSqlList[] = "DROP TABLE `{$tableSchemaForDrop->getName()}`;" . PHP_EOL;
+                $dropTableSqlList[] = "DROP TABLE `{$tableSchemaForDrop->getName()}`; ";
             }
         }
 
@@ -344,10 +344,115 @@ class MigrationGenerator
 
         if (count($tableSchemaListForCreate) > 0) {
             foreach ($tableSchemaListForCreate as $tableSchemaForCreate) {
+                /** @var TableSchema $tableSchemaForCreate */
+                $columnSchemaForCreateList = $tableSchemaForCreate->getColumnSchemaList();
+                $columnSqlList = [];
+                foreach ($columnSchemaForCreateList as $columnSchemaForCreate) {
+                    $autoincrementSql = false === $columnSchemaForCreate->isAutoincrement() ? '' : "AUTO_INCREMENT";
+                    $collateSql = null === $columnSchemaForCreate->getCollate() ?
+                        '' :
+                        "CHARSET `{$columnSchemaForCreate->getCollate()}`";
+                    $nullableSql = $columnSchemaForCreate->isNullable() ? 'NULL' : 'NOT NULL';
+                    if (null === $columnSchemaForCreate->getDefault()) {
+                        $defaultSql = '';
+                    } else {
+                        if (str_contains($columnSchemaForCreate->getType(), 'int')) {
+                            $defaultSql = 'DEFAULT ' . $columnSchemaForCreate->getDefault();
+                        } else {
+                            $defaultSql = 'DEFAULT \'' . $columnSchemaForCreate->getDefault().'\'';
+                        }
+                    }
+
+                    $commentSql = null === $columnSchemaForCreate->getComment() ?
+                        '' :
+                        "COMMENT '{$columnSchemaForCreate->getComment()}'";
+
+                    $columnSqlList[] = <<<EOD
+                    {$columnSchemaForCreate->getName()} {$columnSchemaForCreate->getType()} $collateSql $autoincrementSql $defaultSql $nullableSql $commentSql
+                    EOD;
+                }
+
+                $keySchemaForCreateList = $tableSchemaForCreate->getKeySchemaList();
+                $createKeyTableSqlList = [];
+
+                foreach ($keySchemaForCreateList as $keySchemaForCreate) {
+                    if ($keySchemaForCreate->getType() === KeySchemaTypeEnum::PRIMARY) {
+                        if (!$keySchemaForCreate instanceof PrimaryKeySchema) {
+                            throw new \RuntimeException();
+                        }
+
+                        $createKeyTableSqlList[] = <<<EOD
+                        CONSTRAINT {$tableSchemaForCreate->getName()}_pk PRIMARY KEY ({$keySchemaForCreate->getColumn()})
+                        EOD;
+                    } else if ($keySchemaForCreate->getType() === KeySchemaTypeEnum::UNIQUE) {
+                        if (!$keySchemaForCreate instanceof UniqueKeySchema) {
+                            throw new \RuntimeException();
+                        }
+
+                        $sql = <<<EOD
+                        CONSTRAINT {$keySchemaForCreate->getName()}
+                        EOD;
+                        $columnSchemaList = $keySchemaForCreate->getColumnSchemaList();
+                        $columnStrList = [];
+
+                        foreach ($columnSchemaList as $columnSchema) {
+                            $columnStrList[] = $columnSchema->getName() . ' ' . $columnSchema->getOrder()->value;
+                        }
+
+                        $columnListStr = implode(', ', $columnStrList);
+                        $sql .= " UNIQUE KEY ($columnListStr)";
+                        $sql .= " USING {$keySchemaForCreate->getEngine()->value}";
+                        $createKeyTableSqlList[] = $sql;
+                    } else if ($keySchemaForCreate->getType() === KeySchemaTypeEnum::FOREIGN) {
+                        if (!$keySchemaForCreate instanceof ForeignKeySchema) {
+                            throw new \RuntimeException();
+                        }
+
+                        $sql = <<<EOD
+                        CONSTRAINT {$keySchemaForCreate->getName()} FOREIGN KEY ({$keySchemaForCreate->getColumn()}) REFERENCES `{$keySchemaForCreate->getReferenceTableName()}` ({$keySchemaForCreate->getReferenceColumnName()})
+                        EOD;
+
+                        if (UpdateRuleEnum::CASCADE === $keySchemaForCreate->getUpdateRule()) {
+                            $sql .= ' ON UPDATE CASCADE';
+                        }
+                        if (UpdateRuleEnum::NULL === $keySchemaForCreate->getUpdateRule()) {
+                            $sql .= ' ON UPDATE SET NULL';
+                        }
+                        if (DeleteRuleEnum::CASCADE === $keySchemaForCreate->getDeleteRule()) {
+                            $sql .= ' ON DELETE CASCADE';
+                        }
+                        if (DeleteRuleEnum::NULL === $keySchemaForCreate->getDeleteRule()) {
+                            $sql .= ' ON DELETE SET NULL';
+                        }
+                        $createKeyTableSqlList[] = $sql;
+                    } else if ($keySchemaForCreate->getType() === KeySchemaTypeEnum::INDEX) {
+                        if (!$keySchemaForCreate instanceof IndexKeySchema) {
+                            throw new \RuntimeException();
+                        }
+
+                        $sql = <<<EOD
+                        KEY {$keySchemaForCreate->getName()}
+                        EOD;
+                        $columnSchemaList = $keySchemaForCreate->getColumnSchemaList();
+                        $columnStrList = [];
+
+                        foreach ($columnSchemaList as $columnSchema) {
+                            $columnStrList[] = $columnSchema->getName() . ' ' . $columnSchema->getOrder()->value;
+                        }
+
+                        $columnListStr = implode(', ', $columnStrList);
+                        $sql .= " ($columnListStr)";
+                        $sql .= " USING {$keySchemaForCreate->getEngine()->value}";
+                        $createKeyTableSqlList[] = $sql;
+                    }
+                }
+
+                $keySql = implode(', '.PHP_EOL, $createKeyTableSqlList);
+                $keySql = str_replace(PHP_EOL, '', $keySql);
+                $columnSql = implode(', ' . PHP_EOL, $columnSqlList);
+                $columnSql = str_replace(PHP_EOL, '', $columnSql);
                 $createTableSqlList[] = <<<EOD
-                CREATE TABLE `{$tableSchemaForCreate->getName()}` (
-                    
-                ) ENGINE={$tableSchemaForCreate->getEngine()} DEFAULT CHARSET={$tableSchemaForCreate->getCollation()};
+                CREATE TABLE `{$tableSchemaForCreate->getName()}` ($columnSql,$keySql) ENGINE={$tableSchemaForCreate->getEngine()} DEFAULT CHARSET={$tableSchemaForCreate->getCollation()};
                 EOD;
             }
         }
@@ -367,17 +472,20 @@ class MigrationGenerator
         $dropTableSqlList = $this->dropTableSqlList($tableSchemaListForDrop);
         $updateTableSqlList = $this->updateTableSqlList($tableConfigSchemaListForUpdate, $tableDbSchemaListForUpdate);
 
+        $execStrList = [];
         foreach ($dropTableSqlList as $dropTableSql) {
-            $str .= '        ' . '$this->exec(\'' . addcslashes($dropTableSql, "'") . '\');' . PHP_EOL;
+            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($dropTableSql, "'") . '\');';
         }
 
         foreach ($createTableSqlList as $createTableSql) {
-            $str .= '        ' . '$this->exec(\'' . addcslashes($createTableSql, "'") . '\');' . PHP_EOL;
+            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($createTableSql, "'") . '\');';
         }
 
         foreach ($updateTableSqlList as $updateTableSql) {
-            $str .= '        ' . '$this->exec(\'' . addcslashes($updateTableSql, "'") . '\');' . PHP_EOL;
+            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($updateTableSql, "'") . '\');';
         }
+
+        $str .= implode(PHP_EOL, $execStrList);
 
         return $str;
     }
@@ -394,17 +502,20 @@ class MigrationGenerator
         $dropTableSqlList = $this->dropTableSqlList($tableSchemaListForDrop);
         $updateTableSqlList = $this->updateTableSqlList($tableDbSchemaListForUpdate, $tableConfigSchemaListForUpdate);
 
+        $execStrList = [];
         foreach ($dropTableSqlList as $dropTableSql) {
-            $str .= '        ' . '$this->exec(\'' . addcslashes($dropTableSql, "'") . '\');' . PHP_EOL;
+            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($dropTableSql, "'") . '\');';
         }
 
         foreach ($createTableSqlList as $createTableSql) {
-            $str .= '        ' . '$this->exec(\'' . addcslashes($createTableSql, "'") . '\');' . PHP_EOL;
+            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($createTableSql, "'") . '\');';
         }
 
         foreach ($updateTableSqlList as $updateTableSql) {
-            $str .= '        ' . '$this->exec(\'' . addcslashes($updateTableSql, "'") . '\');' . PHP_EOL;
+            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($updateTableSql, "'") . '\');';
         }
+
+        $str .= implode(PHP_EOL, $execStrList);
 
         return $str;
     }

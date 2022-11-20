@@ -54,9 +54,10 @@ class Migrator
         }
 
         foreach ($notExecutedMigrationList as $notExecutedMigrationClass) {
+            $notExecutedMigrationClass = 'Migrations\\'.$notExecutedMigrationClass;
             $migrationObject = new $notExecutedMigrationClass($this->connection);
             $migrationObject->up();
-            $migrationObject->execute();
+//            $migrationObject->execute();
             $sql = 'insert into `migrations` (`class`) values (:class)';
             $stmt = $this->connection->prepare($sql);
             $stmt->execute(['class' => $notExecutedMigrationClass]);
@@ -100,7 +101,6 @@ class Migrator
         $lastExecutedMigrationClass = end($executedMigrationList);
         $migrationObject = new $lastExecutedMigrationClass($this->connection);
         $migrationObject->down();
-        $migrationObject->execute();
         $sql = 'delete from `migrations` where `class` = :class';
         $stmt = $this->connection->prepare($sql);
         $stmt->execute(['class' => $lastExecutedMigrationClass]);
@@ -115,17 +115,20 @@ class Migrator
         ------------------------------------
               Migration   |      Status
         ------------------------------------
+        
         EOD;
 
         foreach ($executedMigrationList as $executedMigration) {
             $output .= <<<EOD
             $executedMigration | OK
+            
             EOD;
         }
 
         foreach ($notExecutedMigrationList as $notExecutedMigration) {
             $output .= <<<EOD
             $notExecutedMigration | NOT EXECUTED
+            
             EOD;
         }
 
@@ -136,7 +139,7 @@ class Migrator
     {
         $sql = <<<EOD
         CREATE TABLE IF NOT EXISTS `migrations` (
-          `id` bigint(20) NOT NULL,
+          `id` bigint(20) AUTO_INCREMENT NOT NULL,
           `class` varchar(100) NOT NULL,
           PRIMARY KEY (`id`),
           UNIQUE KEY `migrations_class_uindex` (`class`)
@@ -161,20 +164,22 @@ class Migrator
         );
         $sql = 'select * from `migrations`';
         $stmt = $this->connection->prepare($sql);
+        $stmt->execute();
         $executedMigrationList = [];
 
         while($migration = $stmt->fetch()) {
-            foreach ($expectedMigrationList as $expectedMigration) {
-                if ($migration['file'] === $expectedMigration && $migration['status'] === true) {
-                    $executedMigrationList[] = $expectedMigration['file'];
-                }
-            }
+            $executedMigrationList[] = $migration['class'];
+//            foreach ($expectedMigrationList as $expectedMigration) {
+//                if ($migration['file'] === $expectedMigration && $migration['status'] === true) {
+//                    $executedMigrationList[] = $expectedMigration['file'];
+//                }
+//            }
         }
 
         $stmt->closeCursor();
         $notExecutedMigrationList = array_filter(
             $expectedMigrationList,
-            static fn (string $item) => false === in_array($item, $executedMigrationList, true),
+            fn (string $item) => false === in_array('Migrations\\' . $item, $executedMigrationList, true),
         );
 
         return [$expectedMigrationList, $executedMigrationList, $notExecutedMigrationList];

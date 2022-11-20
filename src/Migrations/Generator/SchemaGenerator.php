@@ -9,6 +9,7 @@ use Eva\Database\Schema\Table\ColumnSchema;
 use Eva\Database\ConnectionInterface;
 use Eva\Database\Schema\Table\Key\Foreign\DeleteRuleEnum;
 use Eva\Database\Schema\Table\Key\ForeignKeySchema;
+use Eva\Database\Schema\Table\Key\Index\Enums\IndexEngineEnum;
 use Eva\Database\Schema\Table\Key\IndexKeySchema;
 use Eva\Database\Schema\Table\Key\PrimaryKeySchema;
 use Eva\Database\Schema\Schema;
@@ -40,6 +41,10 @@ class SchemaGenerator
         $stmt->closeCursor();
         foreach ($tableList as $table) {
             $tableName = $table['TABLE_NAME'];
+            if ($tableName === 'migrations') {
+                continue;
+            }
+
             $sql = 'select * from `information_schema`.`COLUMNS` where TABLE_SCHEMA = :schema and TABLE_NAME = :table_name';
             $stmt = $this->connection->prepare($sql);
             $stmt->execute(['schema' => $dbName, 'table_name' => $tableName]);
@@ -180,7 +185,11 @@ class SchemaGenerator
                 group by INDEX_NAME 
                   ';
         $stmt = $this->connection->prepare($sql);
-        $stmt->execute(['schema' => $schema, 'table_name' => $table, 'index_name_list' => $uniqueKeyList]);
+        $stmt->execute([
+            'schema' => $schema,
+            'table_name' => $table,
+            'index_name_list' => implode(', ', $uniqueKeyList),
+        ]);
         $statistics = [];
 
         while ($row = $stmt->fetch()) {
@@ -201,7 +210,7 @@ class SchemaGenerator
             $uniqueKeySchemaList[] = new UniqueKeySchema(
                 $columnList[0]['INDEX_NAME'],
                 $columnSchemaList,
-                $columnList[0]['INDEX_TYPE'],
+                IndexEngineEnum::from(strtoupper($columnList[0]['INDEX_TYPE'])),
             );
         }
 
@@ -222,7 +231,11 @@ class SchemaGenerator
                 group by INDEX_NAME 
                   ';
         $stmt = $this->connection->prepare($sql);
-        $stmt->execute(['schema' => $schema, 'table_name' => $table, 'index_name_list' => $indexKeyList]);
+        $stmt->execute([
+            'schema' => $schema,
+            'table_name' => $table,
+            'index_name_list' => implode(', ', $indexKeyList),
+        ]);
         $statistics = [];
 
         while ($row = $stmt->fetch()) {
@@ -243,7 +256,7 @@ class SchemaGenerator
             $indexKeySchemaList[] = new IndexKeySchema(
                 $columnList[0]['INDEX_NAME'],
                 $columnSchemaList,
-                $columnList[0]['INDEX_TYPE'],
+                IndexEngineEnum::from(strtoupper($columnList[0]['INDEX_TYPE'])),
             );
         }
 
@@ -315,7 +328,7 @@ class SchemaGenerator
                 $columnSchemaList[] = new ColumnSchema(
                     $columnName,
                     $columnData['comment'] ?? null,
-                    $columnData['collate'],
+                    $columnData['collate'] ?? null,
                     $columnData['type'],
                     $columnData['default'] ?? null,
                     $columnData['nullable'] ?? true,
@@ -329,6 +342,7 @@ class SchemaGenerator
                 }
 
                 if ($keyType === 'unique') {
+
                     foreach ($keyData as $keyItem) {
                         $keyColumnSchemaList = [];
 
@@ -339,10 +353,10 @@ class SchemaGenerator
                                 $order = OrderSchemaEnum::DESC;
                             }
 
-                            $keyColumnSchemaList = new IndexColumnSchema($keyColumnData['name'], $order);
+                            $keyColumnSchemaList[] = new IndexColumnSchema($keyColumnData['name'], $order);
                         }
 
-                        $keySchemaList[] = new UniqueKeySchema($keyItem['name'], $keyColumnSchemaList, $keyItem['engine']);
+                        $keySchemaList[] = new UniqueKeySchema($keyItem['name'], $keyColumnSchemaList, IndexEngineEnum::from(strtoupper($keyItem['engine'])));
                     }
                 }
 
@@ -357,10 +371,10 @@ class SchemaGenerator
                                 $order = OrderSchemaEnum::DESC;
                             }
 
-                            $keyColumnSchemaList = new IndexColumnSchema($keyColumnData['name'], $order);
+                            $keyColumnSchemaList[] = new IndexColumnSchema($keyColumnData['name'], $order);
                         }
 
-                        $keySchemaList[] = new IndexKeySchema($keyItem['name'], $keyColumnSchemaList, $keyItem['engine']);
+                        $keySchemaList[] = new IndexKeySchema($keyItem['name'], $keyColumnSchemaList, IndexEngineEnum::from(strtoupper($keyItem['engine'])));
                     }
                 }
 
