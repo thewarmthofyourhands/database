@@ -13,10 +13,16 @@ class Connection implements ConnectionInterface
     protected readonly PDO $pdo;
     protected readonly string $databaseName;
 
-    public function __construct(string $dsn, string $databaseName, string $user, string $password)
-    {
+    public function __construct(
+        string $host,
+        string $port,
+        string $databaseName,
+        string $username,
+        string $password,
+    ) {
         $this->databaseName = $databaseName;
-        $this->pdo = new PDO($dsn, $user, $password);
+        $dsn = "mysql:host=$host;port=$port;dbname=$databaseName";
+        $this->pdo = new PDO($dsn, $username, $password);
     }
 
     public function getDatabaseName(): string

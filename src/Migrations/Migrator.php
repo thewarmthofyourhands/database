@@ -10,10 +10,10 @@ use Eva\Database\Migrations\Generator\SchemaGenerator;
 
 class Migrator
 {
+    private ConnectionInterface $connection;
+
     public function __construct(
         private readonly array $config,
-        private ConnectionInterface $connection,
-        private readonly SchemaGenerator $schemaGenerator,
         private readonly MigrationGenerator $migrationGenerator,
     ) {}
 
@@ -196,8 +196,9 @@ class Migrator
 
     public function diff(): void
     {
-        $configSchema = $this->schemaGenerator->generateFromConfig($this->config['schema']);
-        $dbSchema = $this->schemaGenerator->generateFromDatabase();
+        $schemaGenerator = new SchemaGenerator($this->connection);
+        $configSchema = $schemaGenerator->generateFromConfig($this->config['schema']);
+        $dbSchema = $schemaGenerator->generateFromDatabase();
         $class = 'Migration' . time();
         $namespace = 'Migrations';
         $migrationFile = $this->migrationGenerator->generateFromSchemas($class, $namespace, $configSchema, $dbSchema);

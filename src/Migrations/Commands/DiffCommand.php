@@ -8,7 +8,7 @@ use Eva\Console\ArgvInput;
 use Eva\Database\ConnectionStore;
 use Eva\Database\Migrations\Migrator;
 
-class RollbackCommand
+class DiffCommand
 {
     public function __construct(
         protected readonly ConnectionStore $connectionStore,
@@ -21,16 +21,10 @@ class RollbackCommand
 
         if (array_key_exists('connection', $options)) {
             $this->migrator->setConnection($this->connectionStore->get($options['connection']));
+        } else {
+            $this->migrator->setConnection($this->connectionStore->get());
         }
 
-        if (array_key_exists('filename', $options)) {
-            $filename = $options['filename'];
-            $this->migrator->rollback($filename);
-        } else if (array_key_exists('class', $options)) {
-            $class = $options['class'];
-            $this->migrator->rollback($class);
-        } else {
-            $this->migrator->rollback();
-        }
+        $this->migrator->diff();
     }
 }

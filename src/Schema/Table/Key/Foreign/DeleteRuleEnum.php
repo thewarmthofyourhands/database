@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Eva\Database\Schema;
+namespace Eva\Database\Schema\Table\Key\Foreign;
 
 enum DeleteRuleEnum: string
 {

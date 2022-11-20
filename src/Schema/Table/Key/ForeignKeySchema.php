@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Eva\Database\Schema\Table\Key;
 
-use Eva\Database\Schema\DeleteRuleEnum;
-use Eva\Database\Schema\KeySchemaTypeEnum;
+use Eva\Database\Schema\Table\Key\Foreign\DeleteRuleEnum;
+use Eva\Database\Schema\Table\Key\Foreign\UpdateRuleEnum;
+use Eva\Database\Schema\Table\Enums\KeySchemaTypeEnum;
 use Eva\Database\Schema\Table\KeySchema;
-use Eva\Database\Schema\UpdateRuleEnum;
 
 class ForeignKeySchema extends KeySchema
 {

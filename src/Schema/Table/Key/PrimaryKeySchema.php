@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Eva\Database\Schema\Table\Key;
 
-use Eva\Database\Schema\KeySchemaTypeEnum;
+use Eva\Database\Schema\Table\Enums\KeySchemaTypeEnum;
 use Eva\Database\Schema\Table\KeySchema;
 
 class PrimaryKeySchema extends KeySchema

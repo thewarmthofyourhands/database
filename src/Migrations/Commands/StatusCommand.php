@@ -6,6 +6,7 @@ namespace Eva\Database\Migrations\Commands;
 
 use Eva\Console\ArgvInput;
 use Eva\Database\ConnectionStore;
+use Eva\Database\Migrations\Migrator;
 
 class StatusCommand
 {
@@ -20,6 +21,8 @@ class StatusCommand
 
         if (array_key_exists('connection', $options)) {
             $this->migrator->setConnection($this->connectionStore->get($options['connection']));
+        } else {
+            $this->migrator->setConnection($this->connectionStore->get());
         }
 
         $this->migrator->status();

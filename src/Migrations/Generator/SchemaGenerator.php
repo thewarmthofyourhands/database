@@ -5,18 +5,18 @@ declare(strict_types=1);
 
 namespace Eva\Database\Migrations\Generator;
 
-use Eva\Database\Schema\ColumnSchema;
+use Eva\Database\Schema\Table\ColumnSchema;
 use Eva\Database\ConnectionInterface;
-use Eva\Database\ForeignKeySchema;
-use Eva\Database\IndexKeySchema;
-use Eva\Database\PrimaryKeySchema;
-use Eva\Database\Schema;
-use Eva\Database\Schema\DeleteRuleEnum;
-use Eva\Database\Schema\IndexColumnSchema;
-use Eva\Database\Schema\OrderSchemaEnum;
-use Eva\Database\Schema\UpdateRuleEnum;
-use Eva\Database\TableSchema;
-use Eva\Database\UniqueKeySchema;
+use Eva\Database\Schema\Table\Key\Foreign\DeleteRuleEnum;
+use Eva\Database\Schema\Table\Key\ForeignKeySchema;
+use Eva\Database\Schema\Table\Key\IndexKeySchema;
+use Eva\Database\Schema\Table\Key\PrimaryKeySchema;
+use Eva\Database\Schema\Schema;
+use Eva\Database\Schema\Table\Key\Index\IndexColumnSchema;
+use Eva\Database\Schema\Table\Key\Index\Enums\OrderSchemaEnum;
+use Eva\Database\Schema\Table\Key\Foreign\UpdateRuleEnum;
+use Eva\Database\Schema\TableSchema;
+use Eva\Database\Schema\Table\Key\UniqueKeySchema;
 
 class SchemaGenerator
 {
@@ -314,7 +314,7 @@ class SchemaGenerator
             foreach ($tableData['columns'] as $columnName => $columnData) {
                 $columnSchemaList[] = new ColumnSchema(
                     $columnName,
-                    $columnData['comment'],
+                    $columnData['comment'] ?? null,
                     $columnData['collate'],
                     $columnData['type'],
                     $columnData['default'] ?? null,

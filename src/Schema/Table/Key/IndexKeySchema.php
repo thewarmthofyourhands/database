@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Eva\Database\Schema\Table\Key;
 
-use Eva\Database\Schema\IndexColumnSchema;
-use Eva\Database\Schema\IndexEngineEnum;
-use Eva\Database\Schema\KeySchemaTypeEnum;
+use Eva\Database\Schema\Table\Key\Index\Enums\IndexEngineEnum;
+use Eva\Database\Schema\Table\Enums\KeySchemaTypeEnum;
+use Eva\Database\Schema\Table\Key\Index\IndexColumnSchema;
 use Eva\Database\Schema\Table\KeySchema;
 
 class IndexKeySchema extends KeySchema

@@ -8,7 +8,7 @@ class ColumnSchema
 {
     public function __construct(
         private readonly string $name,
-        private readonly string $comment,
+        private readonly null|string $comment,
         private readonly string $collate,
         private readonly string $type,
         private readonly null|string $default,
@@ -21,7 +21,7 @@ class ColumnSchema
         return $this->name;
     }
 
-    public function getComment(): string
+    public function getComment(): null|string
     {
         return $this->comment;
     }

@@ -21,6 +21,8 @@ class MigrateCommand
 
         if (array_key_exists('connection', $options)) {
             $this->migrator->setConnection($this->connectionStore->get($options['connection']));
+        } else {
+            $this->migrator->setConnection($this->connectionStore->get());
         }
 
         if (array_key_exists('filename', $options)) {
