@@ -45,8 +45,8 @@ class Migrator
             $migrationObject->up();
             $migrationObject->execute();
             $sql = 'insert into `migrations` (`class`) values (:class)';
-            $stmt = $this->connection->prepare($sql);
-            $stmt->execute(['class' => $migrationClass]);
+            $stmt = $this->connection->prepare($sql, ['class' => $migrationClass]);
+            $stmt->execute();
             $stmt->closeCursor();
             print 'Ok';
 
@@ -59,8 +59,8 @@ class Migrator
             $migrationObject->up();
 //            $migrationObject->execute();
             $sql = 'insert into `migrations` (`class`) values (:class)';
-            $stmt = $this->connection->prepare($sql);
-            $stmt->execute(['class' => $notExecutedMigrationClass]);
+            $stmt = $this->connection->prepare($sql, ['class' => $notExecutedMigrationClass]);
+            $stmt->execute();
             $stmt->closeCursor();
         }
 
@@ -90,8 +90,8 @@ class Migrator
             $migrationObject->down();
             $migrationObject->execute();
             $sql = 'delete from `migrations` where `class` = :class';
-            $stmt = $this->connection->prepare($sql);
-            $stmt->execute(['class' => $migrationClass]);
+            $stmt = $this->connection->prepare($sql, ['class' => $migrationClass]);
+            $stmt->execute();
             $stmt->closeCursor();
             print 'Ok';
 
@@ -102,8 +102,8 @@ class Migrator
         $migrationObject = new $lastExecutedMigrationClass($this->connection);
         $migrationObject->down();
         $sql = 'delete from `migrations` where `class` = :class';
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute(['class' => $lastExecutedMigrationClass]);
+        $stmt = $this->connection->prepare($sql, ['class' => $lastExecutedMigrationClass]);
+        $stmt->execute();
         $stmt->closeCursor();
         print 'Ok';
     }

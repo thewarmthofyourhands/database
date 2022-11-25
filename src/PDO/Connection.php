@@ -55,9 +55,37 @@ class Connection implements ConnectionInterface
         return $this->pdo->inTransaction();
     }
 
-    public function prepare(string $sql, array $options = []): Statement
+    public function prepare(string $sql, null|array $parameters = null, array $options = []): Statement
     {
-        return new Statement($this->pdo->prepare($sql, $options));
+        if (null !== $parameters) {
+            $listParameters = [];
+
+            foreach ($parameters as $parameterName => $parameterValue) {
+                if (true === is_array($parameterValue)) {
+                    $newParameterNameList = [];
+
+                    foreach ($parameterValue as $key => $item) {
+                        $newParameterName = $parameterName . '_' . $key;
+                        $newParameterNameList[] = ':'.$newParameterName;
+                        $listParameters[$parameterName . '_' . $key][] = $item;
+                    }
+
+                    $sql = str_replace(':' . $parameterName, implode(', ', $newParameterNameList), $sql);
+                    unset($parameters[$parameterName]);
+                }
+            }
+
+            $parameters = array_merge($parameters, $listParameters);
+            $stmt = new Statement($this->pdo->prepare($sql, $options));
+
+            foreach ($parameters as $parameterName => $parameterValue) {
+                $stmt->bindParam($parameterName, $parameterValue);
+            }
+        } else {
+            $stmt = new Statement($this->pdo->prepare($sql, $options));
+        }
+
+        return $stmt;
     }
 
     public function lastInsertId(): string
@@ -73,23 +101,5 @@ class Connection implements ConnectionInterface
     public function getNativeConnection(): PDO
     {
         return $this->pdo;
-    }
-
-    public function quote(string $param): string
-    {
-        return $this->pdo->quote($param);
-    }
-
-    public function prepareListParam(string|array $param): string
-    {
-        if (true === is_string($param)) {
-            return $this->quote($param);
-        }
-
-        foreach ($param as &$item) {
-            $item = $this->quote((string) $item);
-        }
-
-        return implode(', ', $param);
     }
 }

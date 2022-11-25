@@ -11,11 +11,9 @@ interface ConnectionInterface
     public function rollback(): void;
     public function commit(): void;
     public function inTransaction(): bool;
-    public function prepare(string $sql, array $options = []): StatementInterface;
+    public function prepare(string $sql, null|array $parameters = null, array $options = []): StatementInterface;
     public function lastInsertId(): string;
     public function execute(string $sql): void;
-    public function quote(string $param): string;
-    public function prepareListParam(string|array $param): string;
     public function getNativeConnection(): object;
     public function getDatabaseName(): string;
 }

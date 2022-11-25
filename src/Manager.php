@@ -10,8 +10,8 @@ class Manager
 
     public function select(string $sql, null|array $params = null): array
     {
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute($params);
+        $stmt = $this->connection->prepare($sql, $params);
+        $stmt->execute();
         $result = [];
 
         while ($row = $stmt->fetch()) {
@@ -23,17 +23,17 @@ class Manager
         return $result;
     }
 
-    public function selectOne(string $sql, array $params): null|array
+    public function selectOne(string $sql, null|array $params = null): null|array
     {
         $rows = $this->select($sql, $params);
 
         return $rows === [] ? null : current($rows);
     }
 
-    public function selectYield(string $sql, array $params): null|\Generator
+    public function selectYield(string $sql, null|array $params = null): null|\Generator
     {
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute($params);
+        $stmt = $this->connection->prepare($sql, $params);
+        $stmt->execute();
         $row = $stmt->fetch();
 
         if (false === $row) {
@@ -99,8 +99,8 @@ class Manager
             $whereQuery .= " and $column = $params[$key]";
         }
 
-        $stmt = $this->connection->prepare(" delete from $table where 1=1 $whereQuery");
-        $stmt->execute($values);
+        $stmt = $this->connection->prepare(" delete from $table where 1=1 $whereQuery", $values);
+        $stmt->execute();
         $stmt->closeCursor();
     }
 }

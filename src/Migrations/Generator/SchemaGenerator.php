@@ -30,8 +30,8 @@ class SchemaGenerator
         $dbName = $this->connection->getDatabaseName();
         $tableSchemaList = [];
         $sql = 'select * from `information_schema`.`TABLES` where TABLE_SCHEMA = :schema';
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute(['schema' => $dbName]);
+        $stmt = $this->connection->prepare($sql, ['schema' => $dbName]);
+        $stmt->execute();
         $tableList = [];
 
         while ($table = $stmt->fetch()) {
@@ -46,8 +46,8 @@ class SchemaGenerator
             }
 
             $sql = 'select * from `information_schema`.`COLUMNS` where TABLE_SCHEMA = :schema and TABLE_NAME = :table_name';
-            $stmt = $this->connection->prepare($sql);
-            $stmt->execute(['schema' => $dbName, 'table_name' => $tableName]);
+            $stmt = $this->connection->prepare($sql, ['schema' => $dbName, 'table_name' => $tableName]);
+            $stmt->execute();
             $columnSchemaList = [];
             $keySchemaList = [];
 
@@ -99,13 +99,13 @@ class SchemaGenerator
                 and rc.CONSTRAINT_SCHEMA = :schema_rc
                 and rc.TABLE_NAME = :table_name_rc
                   ';
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute([
+        $stmt = $this->connection->prepare($sql, [
             'schema' => $schema,
             'table_name' => $table,
             'schema_rc' => $schema,
             'table_name_rc' => $table,
         ]);
+        $stmt->execute();
 
         while ($row = $stmt->fetch()) {
             foreach ($foreignKeyList as $foreignKey) {
@@ -157,8 +157,8 @@ class SchemaGenerator
                 where TABLE_SCHEMA = :schema
                 and TABLE_NAME = :table_name
                   ';
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute(['schema' => $schema, 'table_name' => $table]);
+        $stmt = $this->connection->prepare($sql, ['schema' => $schema, 'table_name' => $table]);
+        $stmt->execute();
 
         while ($row = $stmt->fetch()) {
             foreach ($primaryKeyList as $primaryKey) {
@@ -184,12 +184,12 @@ class SchemaGenerator
                 and INDEX_NAME in (:index_name_list)
                 group by INDEX_NAME 
                   ';
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute([
+        $stmt = $this->connection->prepare($sql, [
             'schema' => $schema,
             'table_name' => $table,
-            'index_name_list' => implode(', ', $uniqueKeyList),
+            'index_name_list' => $uniqueKeyList,
         ]);
+        $stmt->execute();
         $statistics = [];
 
         while ($row = $stmt->fetch()) {
@@ -230,12 +230,12 @@ class SchemaGenerator
                 and INDEX_NAME in (:index_name_list)
                 group by INDEX_NAME 
                   ';
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute([
+        $stmt = $this->connection->prepare($sql,[
             'schema' => $schema,
             'table_name' => $table,
-            'index_name_list' => implode(', ', $indexKeyList),
+            'index_name_list' => $indexKeyList,
         ]);
+        $stmt->execute();
         $statistics = [];
 
         while ($row = $stmt->fetch()) {
@@ -269,8 +269,8 @@ class SchemaGenerator
         $uniqueKeyList = [];
         $foreignKeyList = [];
         $sql = 'select * from `information_schema`.`TABLE_CONSTRAINTS` where TABLE_SCHEMA = :schema and TABLE_NAME = :table_name';
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute(['schema' => $schema, 'table_name' => $table]);
+        $stmt = $this->connection->prepare($sql,['schema' => $schema, 'table_name' => $table]);
+        $stmt->execute();
 
         while ($key = $stmt->fetch()) {
             if ($key['CONSTRAINT_TYPE'] === 'PRIMARY KEY') {
@@ -299,8 +299,8 @@ class SchemaGenerator
                 and TABLE_NAME = :table_name
                 group by INDEX_NAME 
                   ';
-        $stmt = $this->connection->prepare($sql);
-        $stmt->execute(['schema' => $schema, 'table_name' => $table]);
+        $stmt = $this->connection->prepare($sql, ['schema' => $schema, 'table_name' => $table]);
+        $stmt->execute();
 
         while ($key = $stmt->fetch()) {
             if (in_array($key['INDEX_NAME'], $primaryKeyList, true) ||
