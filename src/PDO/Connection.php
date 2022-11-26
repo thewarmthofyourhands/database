@@ -62,15 +62,15 @@ class Connection implements ConnectionInterface
 
             foreach ($parameters as $parameterName => $parameterValue) {
                 if (true === is_array($parameterValue)) {
-                    $newParameterNameList = [];
+                    $newSqlParameterNameList = [];
 
                     foreach ($parameterValue as $key => $item) {
                         $newParameterName = $parameterName . '_' . $key;
-                        $newParameterNameList[] = ':'.$newParameterName;
-                        $listParameters[$parameterName . '_' . $key][] = $item;
+                        $newSqlParameterNameList[] = ':'.$newParameterName;
+                        $listParameters[$parameterName . '_' . $key] = $item;
                     }
 
-                    $sql = str_replace(':' . $parameterName, implode(', ', $newParameterNameList), $sql);
+                    $sql = str_replace(':' . $parameterName, implode(', ', $newSqlParameterNameList), $sql);
                     unset($parameters[$parameterName]);
                 }
             }
@@ -79,7 +79,7 @@ class Connection implements ConnectionInterface
             $stmt = new Statement($this->pdo->prepare($sql, $options));
 
             foreach ($parameters as $parameterName => $parameterValue) {
-                $stmt->bindParam($parameterName, $parameterValue);
+                $stmt->bindParam(':' . $parameterName, $parameterValue);
             }
         } else {
             $stmt = new Statement($this->pdo->prepare($sql, $options));

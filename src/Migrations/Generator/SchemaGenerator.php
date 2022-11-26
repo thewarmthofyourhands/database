@@ -53,19 +53,20 @@ class SchemaGenerator
 
             while ($column = $stmt->fetch()) {
                 $columnSchemaList[] = new ColumnSchema(
+                    $column['COLUMN_TYPE'],
                     $column['COLUMN_NAME'],
                     $column['COLUMN_COMMENT'],
-                    $column['COLLATION_NAME'],
-                    $column['COLUMN_TYPE'],
                     'NULL' === $column['COLUMN_DEFAULT'] ? null : $column['COLUMN_DEFAULT'],
+                    $column['COLLATION_NAME'],
                     'YES' === $column['IS_NULLABLE'],
+                    'auto_increment' === strtolower($column['EXTRA']),
                 );
             }
 
             $stmt->closeCursor();
 
             [$primaryKeyList, $uniqueKeyList, $foreignKeyList] = $this->getNotIndexKeyList($dbName, $tableName);
-            $indexKeyList = $this->getIndexKeyList($dbName, $tableName, $uniqueKeyList, $foreignKeyList);
+            $indexKeyList = $this->getIndexKeyList($dbName, $tableName, $primaryKeyList, $uniqueKeyList);
             $keySchemaList += $this->buildIndexKeySchemaByList($dbName, $tableName, $indexKeyList);
             $keySchemaList += $this->buildUniqueKeySchemaByList($dbName, $tableName, $uniqueKeyList);
             $keySchemaList += $this->buildPrimaryKeySchemaByList($dbName, $tableName, $primaryKeyList);
@@ -152,11 +153,10 @@ class SchemaGenerator
     private function buildPrimaryKeySchemaByList(string $schema, string $table, array $primaryKeyList): array
     {
         $primaryKeySchemaList = [];
-
         $sql = 'select * from `information_schema`.`KEY_COLUMN_USAGE` 
                 where TABLE_SCHEMA = :schema
                 and TABLE_NAME = :table_name
-                  ';
+        ';
         $stmt = $this->connection->prepare($sql, ['schema' => $schema, 'table_name' => $table]);
         $stmt->execute();
 
@@ -197,7 +197,7 @@ class SchemaGenerator
         }
 
         foreach ($uniqueKeyList as $uniqueKey) {
-            $columnList = array_filter($statistics, static fn (array $item) => $item['INDEX_NAME'] === $uniqueKey);
+            $columnList = array_values(array_filter($statistics, static fn (array $item) => $item['INDEX_NAME'] === $uniqueKey));
             $columnSchemaList = [];
 
             foreach ($columnList as $column) {
@@ -229,7 +229,7 @@ class SchemaGenerator
                 and TABLE_NAME = :table_name
                 and INDEX_NAME in (:index_name_list)
                 group by INDEX_NAME 
-                  ';
+        ';
         $stmt = $this->connection->prepare($sql,[
             'schema' => $schema,
             'table_name' => $table,
@@ -243,7 +243,7 @@ class SchemaGenerator
         }
 
         foreach ($indexKeyList as $indexKey) {
-            $columnList = array_filter($statistics, static fn (array $item) => $item['INDEX_NAME'] === $indexKey);
+            $columnList = array_values(array_filter($statistics, static fn (array $item) => $item['INDEX_NAME'] === $indexKey));
             $columnSchemaList = [];
 
             foreach ($columnList as $column) {
@@ -269,7 +269,7 @@ class SchemaGenerator
         $uniqueKeyList = [];
         $foreignKeyList = [];
         $sql = 'select * from `information_schema`.`TABLE_CONSTRAINTS` where TABLE_SCHEMA = :schema and TABLE_NAME = :table_name';
-        $stmt = $this->connection->prepare($sql,['schema' => $schema, 'table_name' => $table]);
+        $stmt = $this->connection->prepare($sql, ['schema' => $schema, 'table_name' => $table]);
         $stmt->execute();
 
         while ($key = $stmt->fetch()) {
@@ -326,11 +326,11 @@ class SchemaGenerator
 
             foreach ($tableData['columns'] as $columnName => $columnData) {
                 $columnSchemaList[] = new ColumnSchema(
+                    $columnData['type'],
                     $columnName,
                     $columnData['comment'] ?? null,
-                    $columnData['collate'] ?? null,
-                    $columnData['type'],
                     $columnData['default'] ?? null,
+                    $columnData['collate'] ?? null,
                     $columnData['nullable'] ?? true,
                     $columnData['autoincrement'] ?? false,
                 );

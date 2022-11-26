@@ -17,40 +17,12 @@ class Schema
         return $this->name;
     }
 
-    public function getTableSchema(string $name): null|TableSchema
-    {
-        foreach ($this->tableSchemaList as $tableSchema) {
-            /** @var TableSchema $tableSchema */
-            if ($name === $tableSchema->getName()) {
-                return $tableSchema;
-            }
-        }
-
-        return null;
-    }
-
     /**
      * @return TableSchema[]
      */
     public function getTableSchemaList(): array
     {
         return $this->tableSchemaList;
-    }
-
-    public function getTableNameList(): array
-    {
-        $tableNameList = [];
-
-        foreach ($this->tableSchemaList as $tableSchema) {
-           $tableNameList[] = $tableSchema->getName();
-        }
-
-        return $tableNameList;
-    }
-
-    public function diffTableListWithSchema(Schema $schema): array
-    {
-        return array_diff($this->getTableNameList(), $schema->getTableNameList());
     }
 
     /**

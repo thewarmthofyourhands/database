@@ -7,11 +7,11 @@ namespace Eva\Database\Schema\Table;
 class ColumnSchema
 {
     public function __construct(
+        private readonly string $type,
         private readonly string $name,
         private readonly null|string $comment,
-        private readonly null|string $collate,
-        private readonly string $type,
         private readonly null|string $default,
+        private readonly null|string $collate,
         private readonly bool $nullable = true,
         private readonly bool $autoincrement = false,
     ) {}

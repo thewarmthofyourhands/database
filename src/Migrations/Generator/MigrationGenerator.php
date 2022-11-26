@@ -87,7 +87,7 @@ class MigrationGenerator
                 if ($compareTableSchemaForUpdate->getName() === $tableSchemaForUpdate->getName()) {
                     if ($tableSchemaForUpdate->getCollation() !== $compareTableSchemaForUpdate->getCollation()) {
                         $updateTableSqlList[] = "ALTER TABLE `{$tableSchemaForUpdate->getName()}` 
-                        CHARSET {$tableSchemaForUpdate->getCollation()};" . PHP_EOL;
+                        COLLATE {$tableSchemaForUpdate->getCollation()};" . PHP_EOL;
                     }
 
                     if ($tableSchemaForUpdate->getEngine() !== $compareTableSchemaForUpdate->getEngine()) {
