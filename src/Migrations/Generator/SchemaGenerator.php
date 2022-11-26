@@ -52,11 +52,19 @@ class SchemaGenerator
             $keySchemaList = [];
 
             while ($column = $stmt->fetch()) {
+                if ('NULL' === $column['COLUMN_DEFAULT']) {
+                    $columnDefault = null;
+                } else {
+                    $columnDefault = $column['COLUMN_DEFAULT'];
+                    if (is_string($columnDefault)) {
+                        $columnDefault = trim($column['COLUMN_DEFAULT'], '\'');
+                    }
+                }
                 $columnSchemaList[] = new ColumnSchema(
                     $column['COLUMN_TYPE'],
                     $column['COLUMN_NAME'],
                     $column['COLUMN_COMMENT'],
-                    'NULL' === $column['COLUMN_DEFAULT'] ? null : $column['COLUMN_DEFAULT'],
+                    $columnDefault,
                     $column['COLLATION_NAME'],
                     'YES' === $column['IS_NULLABLE'],
                     'auto_increment' === strtolower($column['EXTRA']),
@@ -67,10 +75,10 @@ class SchemaGenerator
 
             [$primaryKeyList, $uniqueKeyList, $foreignKeyList] = $this->getNotIndexKeyList($dbName, $tableName);
             $indexKeyList = $this->getIndexKeyList($dbName, $tableName, $primaryKeyList, $uniqueKeyList);
-            $keySchemaList += $this->buildIndexKeySchemaByList($dbName, $tableName, $indexKeyList);
-            $keySchemaList += $this->buildUniqueKeySchemaByList($dbName, $tableName, $uniqueKeyList);
-            $keySchemaList += $this->buildPrimaryKeySchemaByList($dbName, $tableName, $primaryKeyList);
-            $keySchemaList += $this->buildForeignKeySchemaByList($dbName, $tableName, $foreignKeyList);
+            array_push($keySchemaList, ...$this->buildIndexKeySchemaByList($dbName, $tableName, $indexKeyList));
+            array_push($keySchemaList, ...$this->buildUniqueKeySchemaByList($dbName, $tableName, $uniqueKeyList));
+            array_push($keySchemaList, ...$this->buildPrimaryKeySchemaByList($dbName, $tableName, $primaryKeyList));
+            array_push($keySchemaList, ...$this->buildForeignKeySchemaByList($dbName, $tableName, $foreignKeyList));
             $tableSchemaList[] = new TableSchema(
                 $tableName,
                 $table['TABLE_COMMENT'],

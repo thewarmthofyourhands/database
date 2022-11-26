@@ -95,7 +95,7 @@ class MigrationGenerator
                         ENGINE = {$tableSchemaForUpdate->getEngine()};" . PHP_EOL;
                     }
 
-                    if ($tableSchemaForUpdate->getComment() !== $compareTableSchemaForUpdate->getComment()) {
+                    if (($tableSchemaForUpdate->getComment() ?? '') !== ($compareTableSchemaForUpdate->getComment() ?? '') && $tableSchemaForUpdate->getComment() !== $compareTableSchemaForUpdate->getComment()) {
                         $updateTableSqlList[] = "ALTER TABLE `{$tableSchemaForUpdate->getName()}`
                         COMMENT = {$tableSchemaForUpdate->getComment()};" . PHP_EOL;
                     }
@@ -116,12 +116,12 @@ class MigrationGenerator
                             || $columnSchemaForUpdate->getCollate() !== $dbColumnSchema->getCollate()
                             || $columnSchemaForUpdate->getType() !== $dbColumnSchema->getType()
                             || $columnSchemaForUpdate->getDefault() !== $dbColumnSchema->getDefault()
-                            || $columnSchemaForUpdate->getComment() !== $dbColumnSchema->getComment()
+                            || $columnSchemaForUpdate->getComment() ?? '' !== $dbColumnSchema->getComment() ?? ''
                         ) {
                             $autoincrementSql = false === $columnSchemaForUpdate->isAutoincrement() ? '' : "AUTO_INCREMENT";
                             $collateSql = null === $columnSchemaForUpdate->getCollate() ?
                                 '' :
-                                "CHARSET `{$columnSchemaForUpdate->getCollate()}`";
+                                "COLLATE `{$columnSchemaForUpdate->getCollate()}`";
                             $nullableSql = $columnSchemaForUpdate->isNullable() ? 'NULL' : 'NOT NULL';
                             $defaultSql = null === $columnSchemaForUpdate->getDefault() ?
                                 '' :
@@ -141,7 +141,7 @@ class MigrationGenerator
                         $autoincrementSql = false === $columnSchemaForCreate->isAutoincrement() ? '' : "AUTO_INCREMENT";
                         $collateSql = null === $columnSchemaForCreate->getCollate() ?
                             '' :
-                            "CHARSET `{$columnSchemaForCreate->getCollate()}`";
+                            "COLLATE `{$columnSchemaForCreate->getCollate()}`";
                         $nullableSql = $columnSchemaForCreate->isNullable() ? 'NULL' : 'NOT NULL';
                         $defaultSql = null === $columnSchemaForCreate->getDefault() ?
                             '' :
@@ -248,7 +248,7 @@ class MigrationGenerator
                             }
 
                             $updateTableSqlList[] = "ALTER TABLE `{$tableSchemaForUpdate->getName()}` 
-                                    CONSTRAINT {$tableSchemaForUpdate->getName()}_pk 
+                                    ADD CONSTRAINT {$tableSchemaForUpdate->getName()}_pk 
                                     PRIMARY KEY ({$keySchemaForCreate->getColumn()});";
                         } else if ($keySchemaForCreate->getType() === KeySchemaTypeEnum::UNIQUE) {
                             if (!$keySchemaForCreate instanceof UniqueKeySchema) {
@@ -256,7 +256,7 @@ class MigrationGenerator
                             }
 
                             $sql = "ALTER TABLE `{$tableSchemaForUpdate->getName()}` 
-                                    CONSTRAINT {$keySchemaForCreate->getName()}";
+                                    ADD CONSTRAINT {$keySchemaForCreate->getName()}";
                             $columnSchemaList = $keySchemaForCreate->getColumnSchemaList();
                             $columnStrList = [];
 
@@ -274,7 +274,7 @@ class MigrationGenerator
                             }
 
                             $sql = "ALTER TABLE `{$tableSchemaForUpdate->getName()}` 
-                                    CONSTRAINT {$keySchemaForCreate->getName()}
+                                    ADD CONSTRAINT {$keySchemaForCreate->getName()}
                                     FOREIGN KEY ({$keySchemaForCreate->getColumn()})
                                     REFERENCES `{$keySchemaForCreate->getReferenceTableName()}` 
                                     ({$keySchemaForCreate->getReferenceColumnName()})";
@@ -298,7 +298,7 @@ class MigrationGenerator
                             }
 
                             $sql = "ALTER TABLE `{$tableSchemaForUpdate->getName()}` 
-                                    CONSTRAINT {$keySchemaForCreate->getName()}";
+                                    ADD CONSTRAINT {$keySchemaForCreate->getName()}";
                             $columnSchemaList = $keySchemaForCreate->getColumnSchemaList();
                             $columnStrList = [];
 
@@ -351,7 +351,7 @@ class MigrationGenerator
                     $autoincrementSql = false === $columnSchemaForCreate->isAutoincrement() ? '' : "AUTO_INCREMENT";
                     $collateSql = null === $columnSchemaForCreate->getCollate() ?
                         '' :
-                        "CHARSET `{$columnSchemaForCreate->getCollate()}`";
+                        "COLLATE `{$columnSchemaForCreate->getCollate()}`";
                     $nullableSql = $columnSchemaForCreate->isNullable() ? 'NULL' : 'NOT NULL';
                     if (null === $columnSchemaForCreate->getDefault()) {
                         $defaultSql = '';
@@ -452,7 +452,7 @@ class MigrationGenerator
                 $columnSql = implode(', ' . PHP_EOL, $columnSqlList);
                 $columnSql = str_replace(PHP_EOL, '', $columnSql);
                 $createTableSqlList[] = <<<EOD
-                CREATE TABLE `{$tableSchemaForCreate->getName()}` ($columnSql,$keySql) ENGINE={$tableSchemaForCreate->getEngine()} DEFAULT CHARSET={$tableSchemaForCreate->getCollation()};
+                CREATE TABLE `{$tableSchemaForCreate->getName()}` ($columnSql,$keySql) ENGINE={$tableSchemaForCreate->getEngine()} COLLATE {$tableSchemaForCreate->getCollation()};
                 EOD;
             }
         }
