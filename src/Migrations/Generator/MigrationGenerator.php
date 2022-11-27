@@ -121,11 +121,11 @@ class MigrationGenerator
                             $autoincrementSql = false === $columnSchemaForUpdate->isAutoincrement() ? '' : "AUTO_INCREMENT";
                             $collateSql = null === $columnSchemaForUpdate->getCollate() ?
                                 '' :
-                                "COLLATE `{$columnSchemaForUpdate->getCollate()}`";
+                                "COLLATE {$columnSchemaForUpdate->getCollate()}";
                             $nullableSql = $columnSchemaForUpdate->isNullable() ? 'NULL' : 'NOT NULL';
                             $defaultSql = null === $columnSchemaForUpdate->getDefault() ?
                                 '' :
-                                'DEFAULT `' . $columnSchemaForUpdate->getDefault().'`';
+                                'DEFAULT ' . $columnSchemaForUpdate->getDefault();
                             $commentSql =
                                 null === $columnSchemaForUpdate->getComment() ||
                                 ''  === $columnSchemaForUpdate->getComment() ?
@@ -143,11 +143,11 @@ class MigrationGenerator
                         $autoincrementSql = false === $columnSchemaForCreate->isAutoincrement() ? '' : "AUTO_INCREMENT";
                         $collateSql = null === $columnSchemaForCreate->getCollate() ?
                             '' :
-                            "COLLATE `{$columnSchemaForCreate->getCollate()}`";
+                            "COLLATE {$columnSchemaForCreate->getCollate()}";
                         $nullableSql = $columnSchemaForCreate->isNullable() ? 'NULL' : 'NOT NULL';
                         $defaultSql = null === $columnSchemaForCreate->getDefault() ?
                             '' :
-                            'DEFAULT `' . $columnSchemaForCreate->getDefault() . '`';
+                            'DEFAULT ' . $columnSchemaForCreate->getDefault();
                         $commentSql = null === $columnSchemaForCreate->getComment() ?
                             '' :
                             "COMMENT '{$columnSchemaForCreate->getComment()}'";
