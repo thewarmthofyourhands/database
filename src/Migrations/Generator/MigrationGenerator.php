@@ -123,9 +123,13 @@ class MigrationGenerator
                                 '' :
                                 "COLLATE {$columnSchemaForUpdate->getCollate()}";
                             $nullableSql = $columnSchemaForUpdate->isNullable() ? 'NULL' : 'NOT NULL';
-                            $defaultSql = null === $columnSchemaForUpdate->getDefault() ?
-                                '' :
-                                'DEFAULT ' . $columnSchemaForUpdate->getDefault();
+
+                            if (is_string($columnSchemaForUpdate->getDefault())) {
+                                $defaultSql = 'DEFAULT \'' . $columnSchemaForUpdate->getDefault() . '\'';
+                            } else {
+                                $defaultSql = $columnSchemaForUpdate->getDefault() ?? '';
+                            }
+
                             $commentSql =
                                 null === $columnSchemaForUpdate->getComment() ||
                                 ''  === $columnSchemaForUpdate->getComment() ?
@@ -145,9 +149,13 @@ class MigrationGenerator
                             '' :
                             "COLLATE {$columnSchemaForCreate->getCollate()}";
                         $nullableSql = $columnSchemaForCreate->isNullable() ? 'NULL' : 'NOT NULL';
-                        $defaultSql = null === $columnSchemaForCreate->getDefault() ?
-                            '' :
-                            'DEFAULT ' . $columnSchemaForCreate->getDefault();
+
+                        if (true === is_string($columnSchemaForCreate->getDefault())) {
+                            $defaultSql = 'DEFAULT \'' . $columnSchemaForCreate->getDefault() . '\'';
+                        } else {
+                            $defaultSql = $columnSchemaForCreate->getDefault() ?? '';
+                        }
+
                         $commentSql = null === $columnSchemaForCreate->getComment() ?
                             '' :
                             "COMMENT '{$columnSchemaForCreate->getComment()}'";
@@ -295,14 +303,11 @@ class MigrationGenerator
                         '' :
                         "COLLATE `{$columnSchemaForCreate->getCollate()}`";
                     $nullableSql = $columnSchemaForCreate->isNullable() ? 'NULL' : 'NOT NULL';
-                    if (null === $columnSchemaForCreate->getDefault()) {
-                        $defaultSql = '';
+
+                    if (is_string($columnSchemaForCreate->getDefault())) {
+                        $defaultSql = 'DEFAULT \'' . $columnSchemaForCreate->getDefault() . '\'';
                     } else {
-                        if (str_contains($columnSchemaForCreate->getType(), 'int')) {
-                            $defaultSql = 'DEFAULT ' . $columnSchemaForCreate->getDefault();
-                        } else {
-                            $defaultSql = 'DEFAULT \'' . $columnSchemaForCreate->getDefault().'\'';
-                        }
+                        $defaultSql = $columnSchemaForCreate->getDefault() ?? '';
                     }
 
                     $commentSql = null === $columnSchemaForCreate->getComment() ?
@@ -455,44 +460,6 @@ class MigrationGenerator
             $execStrList[] = '        ' . '$this->execute(\'' . $updateTableSql . '\');';
         }
 
-        $execStr = implode(PHP_EOL, $execStrList);
-
-        return $execStr;
-    }
-
-    /**
-     * @param TableSchema[] $tableSchemaListForCreate
-     * @param TableSchema[] $tableSchemaListForDrop
-     * @param TableSchema[] $tableSchemaListForUpdate
-     * @return array
-     */
-    public function generateUpOLD_DELETEME(
-        array $tableSchemaListForCreate,
-        array $tableSchemaListForDrop,
-        array $tableSchemaListForUpdate,
-    ): array {
-//        $dropTableStrList = [];
-//        if (count($tableSchemaListForCreate) > 0) {
-//            foreach ($tableSchemaListForCreate as $tableSchemaForCreate) {
-//                $createTableStrList[] = <<<EOD
-//                CREATE TABLE `{$tableSchemaForCreate->getName()}` (
-//
-//                ) ENGINE={$tableSchemaForCreate->getEngine()} DEFAULT CHARSET={$tableSchemaForCreate->getCollation()};
-//                EOD;
-//            }
-//        }
-
-//        if (count($tableSchemaListForDrop) > 0) {
-//            foreach ($tableSchemaListForDrop as $tableSchemaForDrop) {
-//                $dropTableStrList[] = "DROP TABLE `{$tableSchemaForDrop->getName()}`;" . PHP_EOL;
-//            }
-//        }
-
-        if (count($tableSchemaListForUpdate) > 0) {
-            foreach ($tableSchemaListForUpdate as $tableSchemaForUpdate) {
-//                $tableSchemaForUpdate->
-            }
-        }
-        return [];
+        return implode(PHP_EOL, $execStrList);
     }
 }
