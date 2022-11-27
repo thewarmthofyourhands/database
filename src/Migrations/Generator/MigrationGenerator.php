@@ -116,7 +116,7 @@ class MigrationGenerator
                             || $columnSchemaForUpdate->getCollate() !== $dbColumnSchema->getCollate()
                             || $columnSchemaForUpdate->getType() !== $dbColumnSchema->getType()
                             || $columnSchemaForUpdate->getDefault() !== $dbColumnSchema->getDefault()
-                            || $columnSchemaForUpdate->getComment() ?? '' !== $dbColumnSchema->getComment() ?? ''
+                            || ($columnSchemaForUpdate->getComment() ?? '') !== ($dbColumnSchema->getComment() ?? '')
                         ) {
                             $autoincrementSql = false === $columnSchemaForUpdate->isAutoincrement() ? '' : "AUTO_INCREMENT";
                             $collateSql = null === $columnSchemaForUpdate->getCollate() ?
@@ -126,9 +126,11 @@ class MigrationGenerator
                             $defaultSql = null === $columnSchemaForUpdate->getDefault() ?
                                 '' :
                                 'DEFAULT `' . $columnSchemaForUpdate->getDefault().'`';
-                            $commentSql = null === $columnSchemaForUpdate->getComment() ?
-                                '' :
-                                "COMMENT '{$columnSchemaForUpdate->getComment()}'";
+                            $commentSql =
+                                null === $columnSchemaForUpdate->getComment() ||
+                                ''  === $columnSchemaForUpdate->getComment() ?
+                                    '' :
+                                    "COMMENT '{$columnSchemaForUpdate->getComment()}'";
                             $updateTableSqlList[] = <<<EOD
                             ALTER TABLE `{$tableSchemaForUpdate->getName()}`
                             MODIFY `{$columnSchemaForUpdate->getName()}` {$columnSchemaForUpdate->getType()}
@@ -166,66 +168,6 @@ class MigrationGenerator
                         ->diffKeySchemaListWithTable($compareTableSchemaForUpdate);
                     $keySchemaForDropList = $compareTableSchemaForUpdate
                         ->diffKeySchemaListWithTable($tableSchemaForUpdate);
-//                    $keySchemaForUpdateList = $tableSchemaForUpdate
-//                        ->intersectKeySchemaListWithTable($compareTableSchemaForUpdate);
-//                    foreach ($keySchemaForUpdateList as $keySchemaForUpdate) {
-//                        foreach ($compareTableSchemaForUpdate->getColumnSchemaList() as $dbKeySchema) {
-//                            if ($keySchemaForUpdate->getName() !== $dbKeySchema->getName()) {
-//                                continue;
-//                            }
-//
-//                            if (KeySchemaTypeEnum::INDEX === $keySchemaForUpdate->getType()) {
-//                                if (!$keySchemaForUpdate instanceof IndexKeySchema
-//                                    || !$dbKeySchema instanceof IndexKeySchema) {
-//                                    throw new \RuntimeException();
-//                                }
-//
-//                                if ($keySchemaForUpdate-> !== $dbKeySchema->getColumn()) {
-//                                    $updateTableSqlList[] = <<<EOD
-//                                    ALTER TABLE `{$tableSchemaForUpdate->getName()}`
-//                                    DROP KEY `{$dbKeySchema->getName()}`;
-//                                    ALTER TABLE `{$tableSchemaForUpdate->getName()}`
-//                                    CONSTRAINT {$keySchemaForUpdate->getName()}
-//                                    UNIQUE KEY ({$keySchemaForUpdate->getColumn()})
-//                                    EOD;
-//                                }
-//                            }
-//
-//                            if (KeySchemaTypeEnum::UNIQUE === $keySchemaForUpdate->getType()) {
-//                                if (!$keySchemaForUpdate instanceof UniqueKeySchema
-//                                    || !$dbKeySchema instanceof UniqueKeySchema) {
-//                                    throw new \RuntimeException();
-//                                }
-//
-//                                if ($keySchemaForUpdate->getColumn() !== $dbKeySchema->getColumn()) {
-//                                    $updateTableSqlList[] = <<<EOD
-//                                    ALTER TABLE `{$tableSchemaForUpdate->getName()}`
-//                                    DROP KEY `{$dbKeySchema->getName()}`;
-//                                    ALTER TABLE `{$tableSchemaForUpdate->getName()}`
-//                                    CONSTRAINT {$keySchemaForUpdate->getName()}
-//                                    UNIQUE KEY ({$keySchemaForUpdate->getColumn()})
-//                                    EOD;
-//                                }
-//                            }
-//
-//                            if (KeySchemaTypeEnum::PRIMARY === $keySchemaForUpdate->getType()) {
-//                                if (!$keySchemaForUpdate instanceof PrimaryKeySchema
-//                                    || !$dbKeySchema instanceof PrimaryKeySchema) {
-//                                    throw new \RuntimeException();
-//                                }
-//
-//                                if ($keySchemaForUpdate->getColumn() !== $dbKeySchema->getColumn()) {
-//                                    $updateTableSqlList[] = <<<EOD
-//                                    ALTER TABLE `{$tableSchemaForUpdate->getName()}`
-//                                    DROP KEY `{$dbKeySchema->getName()}`;
-//                                    ALTER TABLE `{$tableSchemaForUpdate->getName()}`
-//                                    CONSTRAINT {$tableSchemaForUpdate->getName()}_pk
-//                                    PRIMARY KEY ({$keySchemaForUpdate->getColumn()})
-//                                    EOD;
-//                                }
-//                            }
-//                        }
-//                    }
 
                     foreach ($keySchemaForDropList as $keySchemaForDrop) {
                         if ($keySchemaForDrop->getType() !== KeySchemaTypeEnum::PRIMARY) {
@@ -462,7 +404,6 @@ class MigrationGenerator
 
     public function generateUp(Schema $configSchema, Schema $dbSchema): string
     {
-        $str = '';
         $tableSchemaListForCreate = $configSchema->diffWithSchema($dbSchema);
         $tableSchemaListForDrop = $dbSchema->diffWithSchema($configSchema);
         $tableConfigSchemaListForUpdate = $configSchema->intersectWithSchema($dbSchema);
@@ -472,52 +413,51 @@ class MigrationGenerator
         $dropTableSqlList = $this->dropTableSqlList($tableSchemaListForDrop);
         $updateTableSqlList = $this->updateTableSqlList($tableConfigSchemaListForUpdate, $tableDbSchemaListForUpdate);
 
-        $execStrList = [];
-        foreach ($dropTableSqlList as $dropTableSql) {
-            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($dropTableSql, "'") . '\');';
-        }
-
-        foreach ($createTableSqlList as $createTableSql) {
-            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($createTableSql, "'") . '\');';
-        }
-
-        foreach ($updateTableSqlList as $updateTableSql) {
-            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($updateTableSql, "'") . '\');';
-        }
-
-        $str .= implode(PHP_EOL, $execStrList);
-
-        return $str;
+        return $this->buildMigrationExecution($dropTableSqlList, $createTableSqlList, $updateTableSqlList);
     }
 
     public function generateDown(Schema $configSchema, Schema $dbSchema): string
     {
-        $str = '';
         $tableSchemaListForCreate = $dbSchema->diffWithSchema($configSchema);
         $tableSchemaListForDrop = $configSchema->diffWithSchema($dbSchema);
-        $tableConfigSchemaListForUpdate = $dbSchema->intersectWithSchema($configSchema);
-        $tableDbSchemaListForUpdate = $configSchema->intersectWithSchema($dbSchema);
+        $tableConfigSchemaListForUpdate = $configSchema->intersectWithSchema($dbSchema);
+        $tableDbSchemaListForUpdate = $dbSchema->intersectWithSchema($configSchema);
 
         $createTableSqlList = $this->createTableSqlList($tableSchemaListForCreate);
         $dropTableSqlList = $this->dropTableSqlList($tableSchemaListForDrop);
         $updateTableSqlList = $this->updateTableSqlList($tableDbSchemaListForUpdate, $tableConfigSchemaListForUpdate);
 
+        return $this->buildMigrationExecution($dropTableSqlList, $createTableSqlList, $updateTableSqlList);
+    }
+
+    protected function buildMigrationExecution(
+        array $dropTableSqlList,
+        array $createTableSqlList,
+        array $updateTableSqlList
+    ): string {
         $execStrList = [];
+
         foreach ($dropTableSqlList as $dropTableSql) {
-            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($dropTableSql, "'") . '\');';
+            $dropTableSql = addcslashes($dropTableSql, "'");
+            $dropTableSql = str_replace("\n",' ', $dropTableSql);
+            $execStrList[] = '        ' . '$this->execute(\'' . $dropTableSql . '\');';
         }
 
         foreach ($createTableSqlList as $createTableSql) {
-            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($createTableSql, "'") . '\');';
+            $createTableSql = addcslashes($createTableSql, "'");
+            $createTableSql = str_replace("\n",' ', $createTableSql);
+            $execStrList[] = '        ' . '$this->execute(\'' . $createTableSql . '\');';
         }
 
         foreach ($updateTableSqlList as $updateTableSql) {
-            $execStrList[] = '        ' . '$this->execute(\'' . addcslashes($updateTableSql, "'") . '\');';
+            $updateTableSql = addcslashes($updateTableSql, "'");
+            $updateTableSql = str_replace("\n",' ', $updateTableSql);
+            $execStrList[] = '        ' . '$this->execute(\'' . $updateTableSql . '\');';
         }
 
-        $str .= implode(PHP_EOL, $execStrList);
+        $execStr = implode(PHP_EOL, $execStrList);
 
-        return $str;
+        return $execStr;
     }
 
     /**
