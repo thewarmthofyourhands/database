@@ -86,18 +86,24 @@ class MigrationGenerator
             foreach ($compareTableSchemaListForUpdate as $compareTableSchemaForUpdate) {
                 if ($compareTableSchemaForUpdate->getName() === $tableSchemaForUpdate->getName()) {
                     if ($tableSchemaForUpdate->getCollation() !== $compareTableSchemaForUpdate->getCollation()) {
-                        $updateTableSqlList[] = "ALTER TABLE `{$tableSchemaForUpdate->getName()}` 
-                        COLLATE {$tableSchemaForUpdate->getCollation()};" . PHP_EOL;
+                        $updateTableSqlList[] = <<<EOF
+                        ALTER TABLE `{$tableSchemaForUpdate->getName()}`
+                        COLLATE {$tableSchemaForUpdate->getCollation()};
+                        EOF;
                     }
 
                     if ($tableSchemaForUpdate->getEngine() !== $compareTableSchemaForUpdate->getEngine()) {
-                        $updateTableSqlList[] = "ALTER TABLE `{$tableSchemaForUpdate->getName()}`
-                        ENGINE = {$tableSchemaForUpdate->getEngine()};" . PHP_EOL;
+                        $updateTableSqlList[] =  <<<EOF
+                        ALTER TABLE `{$tableSchemaForUpdate->getName()}`
+                        ENGINE = {$tableSchemaForUpdate->getEngine()};
+                        EOF;
                     }
 
-                    if (($tableSchemaForUpdate->getComment() ?? '') !== ($compareTableSchemaForUpdate->getComment() ?? '') && $tableSchemaForUpdate->getComment() !== $compareTableSchemaForUpdate->getComment()) {
-                        $updateTableSqlList[] = "ALTER TABLE `{$tableSchemaForUpdate->getName()}`
-                        COMMENT = {$tableSchemaForUpdate->getComment()};" . PHP_EOL;
+                    if (($tableSchemaForUpdate->getComment() ?? '') !== ($compareTableSchemaForUpdate->getComment() ?? '')) {
+                        $updateTableSqlList[] =  <<<EOF
+                        ALTER TABLE `{$tableSchemaForUpdate->getName()}`
+                        COMMENT = '{$tableSchemaForUpdate->getComment()}';
+                        EOF;
                     }
 
                     $columnSchemaForCreateList = $tableSchemaForUpdate
