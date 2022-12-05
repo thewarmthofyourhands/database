@@ -6,7 +6,6 @@ namespace Eva\Database\Migrations;
 
 use Eva\Database\ConnectionInterface;
 use Eva\Database\Migrations\Generator\MigrationGenerator;
-use Eva\Database\Migrations\Generator\SchemaGenerator;
 
 class Migrator
 {
@@ -57,7 +56,6 @@ class Migrator
             $notExecutedMigrationClass = 'Migrations\\'.$notExecutedMigrationClass;
             $migrationObject = new $notExecutedMigrationClass($this->connection);
             $migrationObject->up();
-//            $migrationObject->execute();
             $sql = 'insert into `migrations` (`class`) values (:class)';
             $stmt = $this->connection->prepare($sql, ['class' => $notExecutedMigrationClass]);
             $stmt->execute();
@@ -110,7 +108,7 @@ class Migrator
 
     public function status(): void
     {
-        [$expectedMigrationList, $executedMigrationList, $notExecutedMigrationList] = $this->getMigrationData();
+        [, $executedMigrationList, $notExecutedMigrationList] = $this->getMigrationData();
         $output = <<<EOD
         ------------------------------------
               Migration   |      Status
@@ -169,17 +167,12 @@ class Migrator
 
         while($migration = $stmt->fetch()) {
             $executedMigrationList[] = $migration['class'];
-//            foreach ($expectedMigrationList as $expectedMigration) {
-//                if ($migration['file'] === $expectedMigration && $migration['status'] === true) {
-//                    $executedMigrationList[] = $expectedMigration['file'];
-//                }
-//            }
         }
 
         $stmt->closeCursor();
         $notExecutedMigrationList = array_filter(
             $expectedMigrationList,
-            fn (string $item) => false === in_array('Migrations\\' . $item, $executedMigrationList, true),
+            static fn (string $item): bool => false === in_array('Migrations\\' . $item, $executedMigrationList, true),
         );
 
         return [$expectedMigrationList, $executedMigrationList, $notExecutedMigrationList];
@@ -190,23 +183,6 @@ class Migrator
         $class = 'Migration' . time();
         $namespace = 'Migrations';
         $migrationFile = $this->migrationGenerator->generateNew($class, $namespace);
-        $dir = $this->config['dir'];
-
-        if (false === str_ends_with($dir, '/')) {
-            $dir .= '/';
-        }
-
-        file_put_contents($dir . $class . '.php', $migrationFile);
-    }
-
-    public function diff(): void
-    {
-        $schemaGenerator = new SchemaGenerator($this->connection);
-        $configSchema = $schemaGenerator->generateFromConfig($this->config['schema']);
-        $dbSchema = $schemaGenerator->generateFromDatabase();
-        $class = 'Migration' . time();
-        $namespace = 'Migrations';
-        $migrationFile = $this->migrationGenerator->generateFromSchemas($class, $namespace, $configSchema, $dbSchema);
         $dir = $this->config['dir'];
 
         if (false === str_ends_with($dir, '/')) {
