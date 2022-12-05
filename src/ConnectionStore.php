@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Eva\Database;
 
+use RuntimeException;
+
 class ConnectionStore implements ConnectionStoreInterface
 {
     private array $store = [];
@@ -16,7 +18,7 @@ class ConnectionStore implements ConnectionStoreInterface
     public function get(string $alias = 'default'): ConnectionInterface
     {
         if (false === array_key_exists($alias, $this->store)) {
-            throw new \RuntimeException();
+            throw new RuntimeException('Connection ' . $alias . ' is not exist');
         }
 
         return $this->store[$alias];
