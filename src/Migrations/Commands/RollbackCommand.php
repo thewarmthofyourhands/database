@@ -5,13 +5,13 @@ declare(strict_types=1);
 namespace Eva\Database\Migrations\Commands;
 
 use Eva\Console\ArgvInput;
-use Eva\Database\ConnectionStore;
+use Eva\Database\ConnectionStoreInterface;
 use Eva\Database\Migrations\Migrator;
 
 class RollbackCommand
 {
     public function __construct(
-        protected readonly ConnectionStore $connectionStore,
+        protected readonly ConnectionStoreInterface $connectionStore,
         protected readonly Migrator $migrator,
     ) {}
 
