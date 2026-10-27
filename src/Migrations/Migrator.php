@@ -42,7 +42,6 @@ class Migrator
 
             $migrationObject = new $migrationClass($this->connection);
             $migrationObject->up();
-            $migrationObject->execute();
             $sql = 'insert into `migrations` (`class`) values (:class)';
             $stmt = $this->connection->prepare($sql, ['class' => $migrationClass]);
             $stmt->execute();
@@ -86,7 +85,6 @@ class Migrator
 
             $migrationObject = new $migrationClass($this->connection);
             $migrationObject->down();
-            $migrationObject->execute();
             $sql = 'delete from `migrations` where `class` = :class';
             $stmt = $this->connection->prepare($sql, ['class' => $migrationClass]);
             $stmt->execute();
